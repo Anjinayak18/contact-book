@@ -2,7 +2,5 @@
   "name": "contact-book-api",
   "version": "1.0.0",
   "description": "API functions for contact book app",
-  "dependencies": {
-    "sqlite3": "^5.1.6"
-  }
+  "dependencies": {}
 }

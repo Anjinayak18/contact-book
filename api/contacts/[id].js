@@ -1,14 +1,6 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const db = require('../db');
 
-// Database setup
-const dbFile = path.join(process.cwd(), 'backend', 'contacts.db');
-const db = new sqlite3.Database(dbFile, (err) => {
-  if (err) console.error('DB open error:', err.message);
-  else console.log('Connected to SQLite DB:', dbFile);
-});
-
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -24,14 +16,9 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'DELETE') {
       // Delete contact
-      const result = await new Promise((resolve, reject) => {
-        db.run('DELETE FROM contacts WHERE id = ?', [id], function(err) {
-          if (err) reject(err);
-          else resolve(this.changes);
-        });
-      });
-
-      if (result === 0) {
+      const success = db.deleteContact(id);
+      
+      if (!success) {
         return res.status(404).json({ error: 'Contact not found' });
       }
 
@@ -46,24 +33,11 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'name, email and phone are required' });
       }
 
-      const result = await new Promise((resolve, reject) => {
-        const sql = 'UPDATE contacts SET name = ?, email = ?, phone = ? WHERE id = ?';
-        db.run(sql, [name, email, phone, id], function(err) {
-          if (err) reject(err);
-          else resolve(this.changes);
-        });
-      });
-
-      if (result === 0) {
+      const updatedContact = db.updateContact(id, { name, email, phone });
+      
+      if (!updatedContact) {
         return res.status(404).json({ error: 'Contact not found' });
       }
-
-      const updatedContact = await new Promise((resolve, reject) => {
-        db.get('SELECT * FROM contacts WHERE id = ?', [id], (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        });
-      });
 
       return res.json(updatedContact);
     }
