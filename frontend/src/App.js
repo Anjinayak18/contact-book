@@ -5,7 +5,9 @@ import ContactList from './components/ContactList';
 import Pagination from './components/Pagination';
 import './App.css';
 
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+const API_BASE = process.env.NODE_ENV === 'production' 
+  ? '/api' 
+  : (process.env.REACT_APP_API_BASE || 'http://localhost:5000');
 
 function App(){
   const [contacts, setContacts] = useState([]);
