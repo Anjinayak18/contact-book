@@ -16,11 +16,35 @@ const fallbackContacts = [
 ];
 
 function App(){
-  const [contacts, setContacts] = useState([]);
+  // Initialize contacts from localStorage or fallback data
+  const getInitialContacts = () => {
+    const saved = localStorage.getItem('contacts');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing saved contacts:', e);
+        return fallbackContacts;
+      }
+    }
+    return fallbackContacts;
+  };
+
+  const [contacts, setContacts] = useState(getInitialContacts);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [nextId, setNextId] = useState(() => {
+    const savedContacts = getInitialContacts();
+    return Math.max(...savedContacts.map(c => c.id), 0) + 1;
+  });
+
+  // Save contacts to localStorage whenever contacts change
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+    setTotal(contacts.length);
+  }, [contacts]);
 
   async function fetchContacts(p=1){
     setLoading(true);
@@ -29,11 +53,11 @@ function App(){
       setContacts(res.data.data);
       setTotal(res.data.total);
     }catch(err){
-      console.error('API Error:', err);
-      // Use fallback data if API is not available
-      setContacts(fallbackContacts);
-      setTotal(fallbackContacts.length);
-      console.log('Using fallback data');
+      console.log('API not available, using localStorage data');
+      // Use localStorage data if API is not available
+      const currentContacts = getInitialContacts();
+      setContacts(currentContacts);
+      setTotal(currentContacts.length);
     }finally{
       setLoading(false);
     }
@@ -42,29 +66,32 @@ function App(){
   useEffect(()=>{ fetchContacts(page); }, [page]);
 
   const addContact = async (contact) => {
-    // optimistic update: add temp id
-    const temp = { ...contact, id: Date.now() };
-    setContacts(prev => [temp, ...prev]);
     try{
+      // Try API first
       const res = await axios.post(`${API_BASE}/contacts`, contact);
-      // replace temp with real
-      setContacts(prev => prev.map(c => c.id===temp.id ? res.data : c));
+      setContacts(prev => [res.data, ...prev]);
       setTotal(prev => prev + 1);
     }catch(err){
-      setContacts(prev => prev.filter(c => c.id !== temp.id));
-      alert('Failed to add contact');
+      console.log('API not available, using client-side storage');
+      // Client-side fallback: add contact locally
+      const newContact = { ...contact, id: nextId };
+      setContacts(prev => [newContact, ...prev]);
+      setTotal(prev => prev + 1);
+      setNextId(prev => prev + 1);
     }
   };
 
   const deleteContact = async (id) => {
-    const before = contacts;
-    setContacts(prev => prev.filter(c => c.id !== id));
     try{
+      // Try API first
       await axios.delete(`${API_BASE}/contacts/${id}`);
+      setContacts(prev => prev.filter(c => c.id !== id));
       setTotal(prev => prev - 1);
     }catch(err){
-      setContacts(before);
-      alert('Failed to delete contact');
+      console.log('API not available, using client-side storage');
+      // Client-side fallback: delete contact locally
+      setContacts(prev => prev.filter(c => c.id !== id));
+      setTotal(prev => prev - 1);
     }
   };
 
