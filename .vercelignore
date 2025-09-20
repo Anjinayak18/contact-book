@@ -1,0 +1,18 @@
+# Backend files (not needed for Vercel deployment)
+backend/
+node_modules/
+.git/
+.gitignore
+
+# Development files
+*.log
+*.md
+.snapshots/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

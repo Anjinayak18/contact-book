@@ -10,11 +10,7 @@
     },
     {
       "src": "api/**/*.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": "backend/**",
-        "maxDuration": 30
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -29,5 +25,8 @@
   ],
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "buildCommand": "cd frontend && npm ci && npm run build",
+  "installCommand": "npm ci",
+  "framework": "create-react-app"
 }
